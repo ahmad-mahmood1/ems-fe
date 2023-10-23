@@ -31,7 +31,7 @@ import {
 
 const configSchema = z.object({
   employeeListFile: z.object({
-    file: z.instanceof(File).refine((val) => !!val, "File is required"),
+    file: z.object({}).refine((val) => !!val, "File is required"),
     name: z.string(),
   }),
   name: z.string().min(1, { message: "Name is required" }).min(2, {
