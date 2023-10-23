@@ -24,9 +24,9 @@ export default function RootLayout({
         className={cn("h-screen bg-background font-sans antialiased", inter)}
       >
         <Providers>
-          <div className="relative flex h-full flex-col">
+          <div className="relative flex h-full flex-col space-y-4">
             <SiteHeader />
-            <main className="flex-1">{children}</main>
+            <main className="container flex-1">{children}</main>
           </div>
         </Providers>
         <Toaster />

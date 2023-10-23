@@ -1,3 +1,6 @@
+import { ReportGenerationFormValues } from "@/app/page";
+import { generateRandomNumberBetweenRange } from "@/lib/utils";
+import { Employee } from "@/types";
 import {
   Document,
   Font,
@@ -8,12 +11,18 @@ import {
 } from "@react-pdf/renderer";
 import {
   add,
+  differenceInDays,
   format,
-  getDaysInMonth,
   intervalToDuration,
+  intlFormatDistance,
+  isAfter,
+  isBefore,
+  max,
+  min,
   set,
   sub,
 } from "date-fns";
+import moment from "moment";
 import React, { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
 
@@ -71,45 +80,78 @@ const styles = StyleSheet.create({
 });
 
 type AttendanceSheetProps = {
-  employees: string[][];
-  companyDetails: any;
-  selectedMonth?: number;
+  configData: ReportGenerationFormValues;
+  employees: Employee[];
 } & PropsWithChildren;
 
+type TableDataProps = {
+  startDate: Date;
+  endDate: Date;
+  timeIn: string;
+  timeOut: string;
+};
+
 export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
+  configData,
   employees,
-  companyDetails,
-  selectedMonth = 7,
 }) => {
+  let { timeIn, timeOut, name, dateRange } = configData;
+  console.log("===  configData:", configData);
   const employeeData = employees.slice(1);
-  const date = set(new Date(), { month: selectedMonth });
-  const formattedMonth = format(date, "MMM - yy");
+
   return (
     <Document title="Attendance">
-      {employeeData.map((employee: any, i: number) => (
-        <Page
-          size="A4"
-          style={tw("p-10 text-sm font-timesRoman")}
-          wrap={false}
-          key={"emp" + i}
-        >
-          <Text style={tw("mb-1 font-timesBold")}>{companyDetails?.name}</Text>
-          <Text style={[tw("mb-3 font-timesBold"), { fontWeight: 2 }]}>
-            Attendance card for the month {formattedMonth}
-          </Text>
-          <EmployeeDetailBar employeeData={employee} />
-          <EmployeeAttendanceTable
-            date={date}
-            timeIn={companyDetails.timeIn}
-            timeOut={companyDetails.timeOut}
-          />
-        </Page>
-      ))}
+      {employeeData.map((employee: Employee, i: number) => {
+        console.log("===  employee:", employee);
+
+        let startDate, endDate;
+        let invalidRange =
+          isBefore(dateRange.to, employee.doj) ||
+          (employee.dol ? isAfter(dateRange.from, employee.dol) : false);
+
+        if (invalidRange) {
+          startDate = new Date();
+          endDate = new Date();
+        } else {
+          startDate = max([employee.doj, dateRange.from]);
+          endDate = employee.dol
+            ? min([employee.dol, dateRange.to])
+            : dateRange.to;
+        }
+
+        console.log(
+          "===  startDate, endDate:",
+          startDate,
+          endDate,
+          differenceInDays(endDate, startDate)
+        );
+        return (
+          <Page
+            size="A4"
+            style={tw("p-10 text-sm font-timesRoman")}
+            wrap={false}
+            key={"emp" + i}
+          >
+            <Text style={tw("mb-1 font-timesBold")}>{name}</Text>
+            <Text style={[tw("mb-3 font-timesBold"), { fontWeight: 2 }]}>
+              Attendance card for {format(dateRange.from, "dd MMM - yy")} -{" "}
+              {format(dateRange.to, "dd MMM - yy")}
+            </Text>
+            <EmployeeDetailBar employeeData={employee} />
+            <EmployeeAttendanceTable
+              startDate={startDate}
+              endDate={endDate}
+              timeIn={timeIn}
+              timeOut={timeOut}
+            />
+          </Page>
+        );
+      })}
     </Document>
   );
 };
 
-function EmployeeDetailBar({ employeeData }: { employeeData: any }) {
+function EmployeeDetailBar({ employeeData }: { employeeData: Employee }) {
   return (
     <View style={tw("flex flex-row justify-between pr-10")}>
       <View style={tw("flex flex-row")}>
@@ -140,9 +182,7 @@ function EmployeeDetailBar({ employeeData }: { employeeData: any }) {
           <Text>Overtime</Text>
         </View>
         <View>
-          {employeeData?.doj && (
-            <Text>{format(new Date(employeeData?.doj), "dd-MMM-yyyy")}</Text>
-          )}
+          <Text>{moment(employeeData.doj).format("DD-MM-YYYY")}</Text>
           <Text>00:00</Text>
         </View>
       </View>
@@ -151,14 +191,11 @@ function EmployeeDetailBar({ employeeData }: { employeeData: any }) {
 }
 
 function EmployeeAttendanceTable({
-  date,
+  startDate,
+  endDate,
   timeIn,
   timeOut,
-}: {
-  date: Date;
-  timeIn: string;
-  timeOut: string;
-}) {
+}: TableDataProps) {
   let columns = [
     "Srl #",
     "Day",
@@ -179,23 +216,19 @@ function EmployeeAttendanceTable({
           </Text>
         ))}
       </View>
-      <EmployeeRows date={date} timeIn={timeIn} timeOut={timeOut} />
+      <EmployeeRows
+        startDate={startDate}
+        endDate={endDate}
+        timeIn={timeIn}
+        timeOut={timeOut}
+      />
     </View>
   );
 }
 
-function EmployeeRows({
-  date,
-  timeIn,
-  timeOut,
-}: {
-  date: Date;
-  timeIn: string;
-  timeOut: string;
-} & PropsWithChildren) {
-  const days = getDaysInMonth(date);
+function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
   let data: any = [];
-
+  let days = differenceInDays(endDate, startDate);
   let stats: any = {
     PP: days,
     AB: 0,
@@ -208,7 +241,7 @@ function EmployeeRows({
   };
 
   [...Array(days)].forEach((_, i: number) => {
-    let currentDate = set(date, { date: i + 1 });
+    let currentDate = set(startDate, { date: i + 1 });
     let isPublicHoldiay = false;
     let day = format(currentDate, "iii");
     let closingDate = format(currentDate, "dd-MMM-yyyy");
@@ -226,18 +259,18 @@ function EmployeeRows({
 
     if (day !== "Sun" && !isPublicHoldiay) {
       let startTime = sub(
-        set(date, {
+        set(new Date(), {
           hours: parseInt(timeIn.split(":")[0]),
           minutes: parseInt(timeIn.split(":")[1]),
         }),
-        { minutes: Math.floor(Math.random() * (20 - 5)) + 5 }
+        { minutes: generateRandomNumberBetweenRange(0, 8) }
       );
       let endTime = add(
-        set(date, {
+        set(new Date(), {
           hours: parseInt(timeOut.split(":")[0]),
           minutes: parseInt(timeOut.split(":")[1]),
         }),
-        { minutes: Math.floor(Math.random() * (25 - 5)) + 5 }
+        { minutes: generateRandomNumberBetweenRange(2, 5) }
       );
 
       let totalTime = intervalToDuration({ start: startTime, end: endTime });

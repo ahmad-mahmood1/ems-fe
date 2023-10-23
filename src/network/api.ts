@@ -1,64 +1,29 @@
-import { convertJSONObjectToString } from "@/lib/utils";
-import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { parseValidDate } from "@/lib/utils";
+import { Employee } from "@/types";
+import { useMutation } from "@tanstack/react-query";
 import { performRequest } from "./requestHandler";
 
-const getEmployees = () => {
-  return performRequest("/api/employees");
-};
-
-const uploadEmployeesList = (file: File) => {
+const uploadEmployeesList = async (
+  file: File
+): Promise<Record<"employees", Employee[]>> => {
   return performRequest("/api/employees", "post", file);
 };
 
-const getCompanyDetails = () => {
-  return performRequest("/api/company");
-};
-
-const uploadCompanyDetails = (data: any) => {
-  return performRequest(
-    "/api/company",
-    "post",
-    convertJSONObjectToString(data)
-  );
-};
-
-const useGetEmployees = () =>
-  useQuery({
-    queryFn: () => getEmployees(),
-    queryKey: ["employees"],
-    cacheTime: Infinity,
-  });
-
-const useUploadEmployees = (queryClient: QueryClient) => {
+const useUploadEmployees = () => {
   return useMutation({
-    mutationFn: (fileList: FileList) => uploadEmployeesList(fileList[0]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    mutationFn: async (fileList: FileList) => {
+      let res = await uploadEmployeesList(fileList[0]);
+      return {
+        employees: res.employees.map((employee) => {
+          return {
+            ...employee,
+            doj: parseValidDate(employee.doj),
+            dol: employee.dol ? parseValidDate(employee.dol) : undefined,
+          };
+        }),
+      };
     },
   });
 };
 
-const useGetCopmanyDetails = () =>
-  useQuery({
-    queryFn: () => getCompanyDetails(),
-    queryKey: ["company"],
-    cacheTime: Infinity,
-  });
-
-const useUploadCompanyDetails = (queryClient: QueryClient) => {
-  return useMutation({
-    mutationFn: (data: any) => uploadCompanyDetails(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company"] });
-    },
-  });
-};
-
-export {
-  getCompanyDetails,
-  getEmployees,
-  useGetCopmanyDetails,
-  useGetEmployees,
-  useUploadCompanyDetails,
-  useUploadEmployees,
-};
+export { useUploadEmployees };

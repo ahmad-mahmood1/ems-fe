@@ -1,19 +1,7 @@
-import {
-  Document,
-  Font,
-  Page,
-  StyleSheet,
-  Text,
-  View,
-} from "@react-pdf/renderer";
-import {
-  add,
-  format,
-  getDaysInMonth,
-  intervalToDuration,
-  set,
-  sub,
-} from "date-fns";
+import { ReportGenerationFormValues } from "@/app/page";
+import { Employee } from "@/types";
+import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { format, set } from "date-fns";
 import { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
 
@@ -55,13 +43,17 @@ const styles = StyleSheet.create({
 const groupDataByDepartment = (employeeList: any[]) => {
   let departmentEmployeeHash: Record<string, any[]> = {};
   let eobi = 250;
-  employeeList.forEach((employee) => {
+
+  employeeList.forEach((employee, i) => {
+    let grossSalary = isNaN(parseInt(employee["latest_salary"]))
+      ? 0
+      : parseInt(employee["latest_salary"]);
     let data = {
       name: employee.name,
       designation: employee.designation,
       code: employee.code,
-      doj: !!employee.doj && format(new Date(employee.doj), "dd-MM-yyyy"),
-      grossSalary: employee["2022-2023"],
+      doj: employee.doj,
+      grossSalary,
       days: 26,
       tax: "-",
       eobi,
@@ -70,12 +62,14 @@ const groupDataByDepartment = (employeeList: any[]) => {
       loan: "-",
       otherDed: "-",
       advanceAmount: "-",
-      netPay: employee["2022-2023"] - eobi,
+      netPay: grossSalary - eobi,
     };
-    if (!departmentEmployeeHash[employee.department]) {
-      departmentEmployeeHash[employee.department] = [data];
-    } else {
-      departmentEmployeeHash[employee.department].push(data);
+    if (employee.department) {
+      if (!departmentEmployeeHash[employee.department]) {
+        departmentEmployeeHash[employee.department] = [data];
+      } else {
+        departmentEmployeeHash[employee.department].push(data);
+      }
     }
   });
 
@@ -83,18 +77,16 @@ const groupDataByDepartment = (employeeList: any[]) => {
 };
 
 type SalarySheetProps = {
-  employees: string[][];
-  companyDetails: any;
-  selectedMonth?: number;
+  configData: ReportGenerationFormValues;
+  employees: Employee[];
 } & PropsWithChildren;
 
-export function SalarySheet({
-  employees,
-  companyDetails,
-  selectedMonth = 7,
-}: SalarySheetProps) {
+export function SalarySheet({ configData, employees }: SalarySheetProps) {
+  let { name, month } = configData;
+
   const employeeDepartmentHash = groupDataByDepartment(employees.slice(1));
-  const date = set(new Date(), { month: selectedMonth });
+  console.log("===  employeeDepartmentHash:", employeeDepartmentHash);
+  const date = set(new Date(), { month: parseInt(month) });
   const formattedMonth = format(date, "MMM - yy");
 
   return (
@@ -104,7 +96,7 @@ export function SalarySheet({
         style={tw("p-10 text-sm font-timesRoman")}
         orientation="landscape"
       >
-        <Text style={tw("mb-1 font-timesBold")}>{companyDetails?.name}</Text>
+        <Text style={tw("mb-1 font-timesBold")}>{name}</Text>
         <Text style={[tw("mb-3 font-timesBold"), { fontWeight: 2 }]}>
           Salary sheet for the month {formattedMonth}
         </Text>
@@ -112,6 +104,7 @@ export function SalarySheet({
           .sort((a, b) => a.localeCompare(b))
           .map((departmentKey: string, i: number) => (
             <SalariesByDepartmentTable
+              key={"dep" + i}
               employees={employeeDepartmentHash[departmentKey]}
               department={departmentKey}
             />
@@ -168,6 +161,7 @@ function SalariesByDepartmentTable({
         <View style={styles.tableRow}>
           {columns?.map((c: string, i: number) => (
             <View
+              key={i}
               style={[
                 styles.tableCol,
                 tw("font-timesBold"),
@@ -203,7 +197,7 @@ function EmployeeRows({
   };
 
   let rows = employees?.map((employee: any, i: number) => {
-    let grossSalary = employee.grossSalary;
+    let grossSalary = employee.grossSalary || 0;
     let eobi = employee.eobi;
 
     let netPay = grossSalary - eobi;
