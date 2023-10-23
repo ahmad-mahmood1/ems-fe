@@ -129,7 +129,6 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
           <Page
             size="A4"
             style={tw("p-10 text-sm font-timesRoman")}
-            wrap={false}
             key={"emp" + i}
           >
             <Text style={tw("mb-1 font-timesBold")}>{name}</Text>

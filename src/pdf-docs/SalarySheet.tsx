@@ -44,10 +44,10 @@ const groupDataByDepartment = (employeeList: any[]) => {
   let departmentEmployeeHash: Record<string, any[]> = {};
   let eobi = 250;
 
-  employeeList.forEach((employee, i) => {
-    let grossSalary = isNaN(parseInt(employee["latest_salary"]))
-      ? 0
-      : parseInt(employee["latest_salary"]);
+  employeeList.forEach((employee: Employee, i: number) => {
+    let grossSalary = parseInt(
+      employee.latest_salary || employee.joining_salary
+    );
     let data = {
       name: employee.name,
       designation: employee.designation,
@@ -212,7 +212,7 @@ function EmployeeRows({
         <TableCol str={employee.code} customStyle={{ width: "30px" }} />
         <TableCol str={employee.name} customStyle={{ width: "120px" }} />
         <TableCol str={employee.designation} customStyle={{ width: "100px" }} />
-        <TableCol str={employee.doj} />
+        <TableCol str={format(employee.doj, "dd-MMM-yyyy")} />
         <TableCol str={employee.grossSalary} />
         <TableCol str={employee.days} />
         <TableCol str={employee.ot} />

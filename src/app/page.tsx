@@ -30,7 +30,10 @@ import {
 } from "@/components/ui/select";
 
 const configSchema = z.object({
-  employeeListFile: z.object({}, { required_error: "File is required" }),
+  employeeListFile: z.object({
+    file: z.instanceof(File).refine((val) => !!val, "File is required"),
+    name: z.string(),
+  }),
   name: z.string().min(1, { message: "Name is required" }).min(2, {
     message: "Name must be at least 2 characters.",
   }),
@@ -57,10 +60,7 @@ const configSchema = z.object({
 export type ReportGenerationFormValues = z.infer<typeof configSchema>;
 
 export default function ReportGenerationForm() {
-  const [configData, setConfigData] = useState<any>(null);
-
   const defaultValues: Partial<ReportGenerationFormValues> = {
-    // employeeListFile: undefined,
     name: "Al Hasan",
     timeIn: "09:00",
     timeOut: "17:00",
@@ -82,7 +82,8 @@ export default function ReportGenerationForm() {
     form.reset(form.getValues(), { keepDirty: false });
   }
 
-  console.log(form.getValues());
+  console.log("===  form.getValues():", form.getValues());
+  console.log("form.formState.isDirty", form.getFieldState("employeeListFile"));
 
   return (
     <div>
@@ -139,15 +140,17 @@ export default function ReportGenerationForm() {
                   <FormLabel>Employee List File</FormLabel>
                   <FormControl>
                     <Input
-                      {...field}
                       value={undefined}
                       placeholder="Your name"
                       type="file"
                       onChange={(e) =>
-                        e.currentTarget.files &&
+                        e.currentTarget.files?.length &&
                         form.setValue(
-                          "employeeListFile",
-                          e.currentTarget.files,
+                          field.name,
+                          {
+                            file: e.currentTarget.files[0],
+                            name: e.currentTarget.files[0].name,
+                          },
                           {
                             shouldDirty: true,
                             shouldTouch: true,

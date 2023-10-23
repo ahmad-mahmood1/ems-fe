@@ -49,7 +49,7 @@ function ReportsViewer({ configData }: ReportsViewerProps) {
             disabled={mutation.isLoading}
             onClick={() => {
               mutation.error && mutation.reset();
-              employeeListFile && mutation.mutate(employeeListFile as FileList);
+              employeeListFile && mutation.mutate(employeeListFile.file);
             }}
           >
             Generate Report {mutation.isLoading && <Icons.spinner />}
