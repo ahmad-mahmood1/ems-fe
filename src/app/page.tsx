@@ -82,9 +82,6 @@ export default function ReportGenerationForm() {
     form.reset(form.getValues(), { keepDirty: false });
   }
 
-  console.log("===  form.getValues():", form.getValues());
-  console.log("form.formState.isDirty", form.getFieldState("employeeListFile"));
-
   return (
     <div>
       <div className="w-full px-2 py-4 border rounded-md">

@@ -28,7 +28,6 @@ function ReportsViewer({ configData }: ReportsViewerProps) {
   const [preview, setPreview] = useState(false);
 
   const mutation = useUploadEmployees();
-  console.log("===  mutation:", mutation.data);
 
   const isClient = useIsClient();
   let Comp = componentHash[reportType];
