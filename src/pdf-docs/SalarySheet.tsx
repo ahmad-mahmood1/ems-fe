@@ -85,7 +85,6 @@ export function SalarySheet({ configData, employees }: SalarySheetProps) {
   let { name, month } = configData;
 
   const employeeDepartmentHash = groupDataByDepartment(employees.slice(1));
-  console.log("===  employeeDepartmentHash:", employeeDepartmentHash);
   const date = set(new Date(), { month: parseInt(month) });
   const formattedMonth = format(date, "MMM - yy");
 

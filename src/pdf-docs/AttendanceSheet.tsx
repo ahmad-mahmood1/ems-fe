@@ -14,32 +14,18 @@ import {
   differenceInDays,
   format,
   intervalToDuration,
-  intlFormatDistance,
   isAfter,
   isBefore,
   max,
   min,
   set,
-  sub,
+  sub
 } from "date-fns";
 import moment from "moment";
 import React, { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
 
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
-      fontWeight: 600,
-    },
-  ],
-});
 
-// The 'theme' object is your Tailwind theme config
 const tw = createTw({
   theme: {
     fontFamily: {
@@ -96,13 +82,11 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
   employees,
 }) => {
   let { timeIn, timeOut, name, dateRange } = configData;
-  console.log("===  configData:", configData);
   const employeeData = employees.slice(1);
 
   return (
     <Document title="Attendance">
       {employeeData.map((employee: Employee, i: number) => {
-        console.log("===  employee:", employee);
 
         let startDate, endDate;
         let invalidRange =
@@ -119,12 +103,6 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
             : dateRange.to;
         }
 
-        console.log(
-          "===  startDate, endDate:",
-          startDate,
-          endDate,
-          differenceInDays(endDate, startDate)
-        );
         return (
           <Page
             size="A4"
