@@ -26,6 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
+import useIsClient from "@/hooks/useIsClient";
+import { useUploadEmployees } from "@/network/api";
 import { getMonth, subDays } from "date-fns";
 
 const configSchema = z.object({
@@ -59,6 +62,9 @@ const configSchema = z.object({
 export type ReportGenerationFormValues = z.infer<typeof configSchema>;
 
 export default function ReportGenerationForm() {
+  const mutation = useUploadEmployees();
+  console.log("===  mutation:", mutation);
+  const isClient = useIsClient();
   const defaultValues: Partial<ReportGenerationFormValues> = {
     name: "Al Hasan",
     timeIn: "09:00",
@@ -78,6 +84,13 @@ export default function ReportGenerationForm() {
 
   async function onSubmit(data: ReportGenerationFormValues) {
     let { employeeListFile, reportType, ...rest } = data;
+    mutation.reset();
+    await mutation.mutateAsync(employeeListFile.file as File);
+    mutation.error &&
+      toast({
+        title: "Failed to load configuration",
+        description: <div className="text-destructive">Invalid data!</div>,
+      });
     form.reset(form.getValues(), { keepDirty: false });
   }
 
@@ -284,9 +297,15 @@ export default function ReportGenerationForm() {
           </Button>
         </div>
       </div>
-      {form.formState.isSubmitSuccessful && !form.formState.isDirty && (
-        <ReportsViewer configData={form.getValues()} />
-      )}
+      {isClient &&
+        form.formState.isSubmitSuccessful &&
+        !form.formState.isDirty &&
+        mutation.isSuccess && (
+          <ReportsViewer
+            configData={form.getValues()}
+            employees={mutation.data.employees}
+          />
+        )}
     </div>
   );
 }

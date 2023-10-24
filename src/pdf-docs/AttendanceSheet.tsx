@@ -1,14 +1,8 @@
 import { ReportGenerationFormValues } from "@/app/page";
+import { gazettedHolidays } from "@/constants/dates";
 import { generateRandomNumberBetweenRange } from "@/lib/utils";
 import { Employee } from "@/types";
-import {
-  Document,
-  Font,
-  Page,
-  StyleSheet,
-  Text,
-  View,
-} from "@react-pdf/renderer";
+import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import {
   add,
   differenceInDays,
@@ -16,15 +10,16 @@ import {
   intervalToDuration,
   isAfter,
   isBefore,
+  isEqual,
   max,
   min,
   set,
-  sub
+  setYear,
+  sub,
 } from "date-fns";
 import moment from "moment";
 import React, { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
-
 
 const tw = createTw({
   theme: {
@@ -63,6 +58,10 @@ const styles = StyleSheet.create({
     backgroundColor: "grey",
     border: 0,
   },
+
+  danger: {
+    color: "red",
+  },
 });
 
 type AttendanceSheetProps = {
@@ -82,48 +81,47 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
   employees,
 }) => {
   let { timeIn, timeOut, name, dateRange } = configData;
-  const employeeData = employees.slice(1);
+  const employeeData = employees.slice(1).filter((employee: Employee) => {
+    let invalidRange =
+      isBefore(dateRange.to, employee.doj) ||
+      (employee.dol ? isAfter(dateRange.from, employee.dol) : false);
+    return !invalidRange;
+  });
 
   return (
     <Document title="Attendance">
-      {employeeData.map((employee: Employee, i: number) => {
-
-        let startDate, endDate;
-        let invalidRange =
-          isBefore(dateRange.to, employee.doj) ||
-          (employee.dol ? isAfter(dateRange.from, employee.dol) : false);
-
-        if (invalidRange) {
-          startDate = new Date();
-          endDate = new Date();
-        } else {
+      {employeeData.length > 0 ? (
+        employeeData.map((employee: Employee, i: number) => {
+          let startDate, endDate;
           startDate = max([employee.doj, dateRange.from]);
           endDate = employee.dol
             ? min([employee.dol, dateRange.to])
             : dateRange.to;
-        }
 
-        return (
-          <Page
-            size="A4"
-            style={tw("p-10 text-sm font-timesRoman")}
-            key={"emp" + i}
-          >
-            <Text style={tw("mb-1 font-timesBold")}>{name}</Text>
-            <Text style={[tw("mb-3 font-timesBold"), { fontWeight: 2 }]}>
-              Attendance card for {format(dateRange.from, "dd MMM - yy")} -{" "}
-              {format(dateRange.to, "dd MMM - yy")}
-            </Text>
-            <EmployeeDetailBar employeeData={employee} />
-            <EmployeeAttendanceTable
-              startDate={startDate}
-              endDate={endDate}
-              timeIn={timeIn}
-              timeOut={timeOut}
-            />
-          </Page>
-        );
-      })}
+          return (
+            <Page
+              size="A4"
+              style={tw("p-10 text-sm font-timesRoman")}
+              key={"emp" + i}
+            >
+              <Text style={tw("mb-1 font-timesBold")}>{name}</Text>
+              <Text style={[tw("mb-3 font-timesBold"), { fontWeight: 2 }]}>
+                Attendance card for {format(dateRange.from, "dd MMM - yy")} -{" "}
+                {format(dateRange.to, "dd MMM - yy")}
+              </Text>
+              <EmployeeDetailBar employeeData={employee} />
+              <EmployeeAttendanceTable
+                startDate={startDate}
+                endDate={endDate}
+                timeIn={timeIn}
+                timeOut={timeOut}
+              />
+            </Page>
+          );
+        })
+      ) : (
+        <Page></Page>
+      )}
     </Document>
   );
 };
@@ -219,7 +217,9 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
 
   [...Array(days)].forEach((_, i: number) => {
     let currentDate = set(startDate, { date: i + 1 });
-    let isPublicHoldiay = false;
+    let isPublicHoldiay = gazettedHolidays.some((date) =>
+      isEqual(setYear(date, 1997), setYear(currentDate, 1997))
+    );
     let day = format(currentDate, "iii");
     let closingDate = format(currentDate, "dd-MMM-yyyy");
 
@@ -280,20 +280,17 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
   });
 
   let rows = data?.map((item: any, i: number) => {
-    let style: any[] = [styles.rowView];
-
-    if (item.day === "Sun") {
-      style = style.concat(styles.sunday);
+    let rowStyle: any[] = [styles.rowView];
+    let dayCellStyle: any[] = [styles.colItem];
+    let isOffOrHoliday = item.day === "Sun" || item.attendance === "GH";
+    if (isOffOrHoliday) {
+      rowStyle = rowStyle.concat(styles.sunday);
+      dayCellStyle = dayCellStyle.concat(styles.danger);
     }
-
     return (
-      <View style={style} key={item.srl}>
+      <View style={rowStyle} key={item.srl}>
         <Text style={styles.colItem}>{item.srl}</Text>
-        <Text
-          style={[styles.colItem, item.day === "Sun" ? { color: "red" } : {}]}
-        >
-          {item.day}
-        </Text>
+        <Text style={dayCellStyle}>{item.day}</Text>
         <Text style={styles.colItem}>{item.closingDate}</Text>
         <Text style={styles.colItem}>{item.timeIn}</Text>
         <Text style={styles.colItem}>{item.timeOut}</Text>
