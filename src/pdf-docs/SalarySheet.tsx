@@ -1,7 +1,7 @@
 import { ReportGenerationFormValues } from "@/app/page";
 import { Employee } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { format, set } from "date-fns";
+import { format, isBefore, set } from "date-fns";
 import { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
 
@@ -40,38 +40,40 @@ const styles = StyleSheet.create({
   },
 });
 
-const groupDataByDepartment = (employeeList: any[]) => {
+const groupDataByDepartment = (employeeList: Employee[], date: Date) => {
   let departmentEmployeeHash: Record<string, any[]> = {};
   let eobi = 250;
 
-  employeeList.forEach((employee: Employee, i: number) => {
-    let grossSalary = parseInt(
-      employee.latest_salary || employee.joining_salary
-    );
-    let data = {
-      name: employee.name,
-      designation: employee.designation,
-      code: employee.code,
-      doj: employee.doj,
-      grossSalary,
-      days: 26,
-      tax: "-",
-      eobi,
-      ot: "-",
-      otAmount: "-",
-      loan: "-",
-      otherDed: "-",
-      advanceAmount: "-",
-      netPay: grossSalary - eobi,
-    };
-    if (employee.department) {
-      if (!departmentEmployeeHash[employee.department]) {
-        departmentEmployeeHash[employee.department] = [data];
-      } else {
-        departmentEmployeeHash[employee.department].push(data);
+  employeeList
+    ?.filter((employee) => isBefore(employee.doj, date))
+    .forEach((employee: Employee, i: number) => {
+      let grossSalary = parseInt(
+        employee.latest_salary || employee.joining_salary
+      );
+      let data = {
+        name: employee.name,
+        designation: employee.designation,
+        code: employee.code,
+        doj: employee.doj,
+        grossSalary,
+        days: 26,
+        tax: "-",
+        eobi,
+        ot: "-",
+        otAmount: "-",
+        loan: "-",
+        otherDed: "-",
+        advanceAmount: "-",
+        netPay: grossSalary - eobi,
+      };
+      if (employee.department) {
+        if (!departmentEmployeeHash[employee.department]) {
+          departmentEmployeeHash[employee.department] = [data];
+        } else {
+          departmentEmployeeHash[employee.department].push(data);
+        }
       }
-    }
-  });
+    });
 
   return departmentEmployeeHash;
 };
@@ -84,8 +86,11 @@ type SalarySheetProps = {
 export function SalarySheet({ configData, employees }: SalarySheetProps) {
   let { name, month } = configData;
 
-  const employeeDepartmentHash = groupDataByDepartment(employees.slice(1));
   const date = set(new Date(), { month: parseInt(month) });
+  const employeeDepartmentHash = groupDataByDepartment(
+    employees.slice(1),
+    date
+  );
   const formattedMonth = format(date, "MMM - yy");
 
   return (
@@ -182,7 +187,7 @@ function SalariesByDepartmentTable({
 function EmployeeRows({
   employees,
 }: {
-  employees: any[];
+  employees: Employee[];
 } & PropsWithChildren) {
   let stats: any = {
     grossSalary: 0,
@@ -195,7 +200,7 @@ function EmployeeRows({
     netPay: 0,
   };
 
-  let rows = employees?.map((employee: any, i: number) => {
+  let rows = employees.map((employee: any, i: number) => {
     let grossSalary = employee.grossSalary || 0;
     let eobi = employee.eobi;
 

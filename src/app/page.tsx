@@ -6,6 +6,7 @@ import * as z from "zod";
 
 import ReportsViewer from "@/components/ReportsViewer";
 import { Button } from "@/components/ui/button";
+import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Form,
   FormControl,
@@ -16,11 +17,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import Loader from "@/components/ui/loader";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { getMonth, sub, subDays } from "date-fns";
-import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Select,
   SelectContent,
@@ -28,6 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useIsClient from "@/hooks/useIsClient";
+import { useUploadEmployees } from "@/network/api";
+import { getMonth, subDays } from "date-fns";
+import { toast } from "@/components/ui/use-toast";
 
 const configSchema = z.object({
   employeeListFile: z.object({
@@ -60,6 +62,9 @@ const configSchema = z.object({
 export type ReportGenerationFormValues = z.infer<typeof configSchema>;
 
 export default function ReportGenerationForm() {
+  const mutation = useUploadEmployees();
+  console.log("===  mutation:", mutation);
+  const isClient = useIsClient();
   const defaultValues: Partial<ReportGenerationFormValues> = {
     name: "Al Hasan",
     timeIn: "09:00",
@@ -79,6 +84,13 @@ export default function ReportGenerationForm() {
 
   async function onSubmit(data: ReportGenerationFormValues) {
     let { employeeListFile, reportType, ...rest } = data;
+    mutation.reset();
+    await mutation.mutateAsync(employeeListFile.file as File);
+    mutation.error &&
+      toast({
+        title: "Failed to load configuration",
+        description: <div className="text-destructive">Invalid data!</div>,
+      });
     form.reset(form.getValues(), { keepDirty: false });
   }
 
@@ -285,9 +297,15 @@ export default function ReportGenerationForm() {
           </Button>
         </div>
       </div>
-      {form.formState.isSubmitSuccessful && !form.formState.isDirty && (
-        <ReportsViewer configData={form.getValues()} />
-      )}
+      {isClient &&
+        form.formState.isSubmitSuccessful &&
+        !form.formState.isDirty &&
+        mutation.isSuccess && (
+          <ReportsViewer
+            configData={form.getValues()}
+            employees={mutation.data.employees}
+          />
+        )}
     </div>
   );
 }

@@ -78,6 +78,7 @@ export function CalendarDateRangePicker({
               range && handleDateRangeSelect(range);
             }}
             numberOfMonths={2}
+            showOutsideDays={false}
             disabled={{ after: addDays(new Date(), 1) }}
           />
         </PopoverContent>
