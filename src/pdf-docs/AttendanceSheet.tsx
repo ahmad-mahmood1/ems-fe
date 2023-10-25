@@ -5,6 +5,7 @@ import { Employee } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import {
   add,
+  addDays,
   differenceInDays,
   format,
   intervalToDuration,
@@ -106,8 +107,8 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
             >
               <Text style={tw("mb-1 font-timesBold")}>{name}</Text>
               <Text style={[tw("mb-3 font-timesBold"), { fontWeight: 2 }]}>
-                Attendance card for {format(dateRange.from, "dd MMM - yy")} -{" "}
-                {format(dateRange.to, "dd MMM - yy")}
+                Attendance card for {format(dateRange.from, "dd-MMM-yy")} to{" "}
+                {format(dateRange.to, "dd-MMM-yy")}
               </Text>
               <EmployeeDetailBar employeeData={employee} />
               <EmployeeAttendanceTable
@@ -203,7 +204,7 @@ function EmployeeAttendanceTable({
 
 function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
   let data: any = [];
-  let days = differenceInDays(endDate, startDate);
+  let days = differenceInDays(endDate, startDate) + 1;
   let stats: any = {
     PP: days,
     AB: 0,
@@ -216,7 +217,7 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
   };
 
   [...Array(days)].forEach((_, i: number) => {
-    let currentDate = set(startDate, { date: i + 1 });
+    let currentDate = addDays(startDate, i);
     let isPublicHoldiay = gazettedHolidays.some((date) =>
       isEqual(setYear(date, 1997), setYear(currentDate, 1997))
     );
@@ -224,7 +225,7 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
     let closingDate = format(currentDate, "dd-MMM-yyyy");
 
     let employeeObject = {
-      srl: i,
+      srl: i + 1,
       day,
       closingDate,
       timeIn: "",
@@ -254,7 +255,19 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
 
       employeeObject.timeIn = format(startTime, "HH:mm");
       employeeObject.timeOut = format(endTime, "HH:mm");
-      employeeObject.totalTime = `${totalTime.hours}:${totalTime.minutes}`;
+      employeeObject.totalTime = `${
+        totalTime.hours
+          ? totalTime?.hours <= 9
+            ? "0" + totalTime.hours
+            : totalTime.hours
+          : "00"
+      }:${
+        totalTime.minutes
+          ? totalTime?.minutes <= 9
+            ? "0" + totalTime.minutes
+            : totalTime.minutes
+          : "00"
+      }`;
     }
 
     // let row = [];

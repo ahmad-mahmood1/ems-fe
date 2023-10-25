@@ -63,7 +63,6 @@ export type ReportGenerationFormValues = z.infer<typeof configSchema>;
 
 export default function ReportGenerationForm() {
   const mutation = useUploadEmployees();
-  console.log("===  mutation:", mutation);
   const isClient = useIsClient();
   const defaultValues: Partial<ReportGenerationFormValues> = {
     name: "Al Hasan",
