@@ -224,7 +224,7 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
     let closingDate = format(currentDate, "dd-MMM-yyyy");
 
     let employeeObject = {
-      srl: i,
+      srl: i + 1,
       day,
       closingDate,
       timeIn: "",
