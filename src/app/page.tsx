@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
 import ReportsViewer from "@/components/ReportsViewer";
 import { Button } from "@/components/ui/button";
@@ -28,41 +27,26 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import useIsClient from "@/hooks/useIsClient";
-import { useUploadEmployees } from "@/network/api";
+import { useUploadEmployees, useUploadOffDaysList } from "@/network/api";
 import { getMonth, subDays } from "date-fns";
-
-const configSchema = z.object({
-  employeeListFile: z.object({
-    file: z.object({}).refine((val) => !!val, "File is required"),
-    name: z.string(),
-  }),
-  name: z.string().min(1, { message: "Name is required" }).min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  timeIn: z
-    .string({ required_error: "Time required" })
-    .refine(
-      (val) => !!/([01]?[0-9]|2[0-3]):[0-5][0-9]/.test(val),
-      "Invalid time"
-    ),
-  timeOut: z
-    .string({ required_error: "Time required" })
-    .refine(
-      (val) => !!/([01]?[0-9]|2[0-3]):[0-5][0-9]/.test(val),
-      "Invalid time"
-    ),
-  reportType: z.enum(["attendance", "salary"]),
-  dateRange: z.object({
-    to: z.date(),
-    from: z.date(),
-  }),
-  month: z.string(),
-});
-
-export type ReportGenerationFormValues = z.infer<typeof configSchema>;
+import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import {
+  Employee,
+  OffDay,
+  ReportGenerationFormValues,
+  configSchema,
+} from "@/types";
 
 export default function ReportGenerationForm() {
+  const [employeeFile, setEmployeeFile] = useState<FileList | null>(null);
+  const [employeeList, setEmployeeList] = useState<Employee[] | null>(null);
+
+  const [employeeOffDaysFile, setEmployeeOffDaysFile] =
+    useState<FileList | null>(null);
+  const [offDaysList, setOffDaysList] = useState<OffDay[] | null>(null);
   const mutation = useUploadEmployees();
+  const offDayMutation = useUploadOffDaysList();
   const isClient = useIsClient();
   const defaultValues: Partial<ReportGenerationFormValues> = {
     name: "Al Hasan",
@@ -82,20 +66,94 @@ export default function ReportGenerationForm() {
   });
 
   async function onSubmit(data: ReportGenerationFormValues) {
-    let { employeeListFile, reportType, ...rest } = data;
+    form.reset(data, { keepDirty: false });
+  }
+
+  async function handleEmployeeFileUpload() {
     mutation.reset();
-    await mutation.mutateAsync(employeeListFile.file as File);
-    mutation.error &&
+    let data = await mutation.mutateAsync((employeeFile as FileList)[0]);
+    if (mutation.error) {
       toast({
         title: "Failed to load configuration",
         description: <div className="text-destructive">Invalid data!</div>,
       });
-    form.reset(form.getValues(), { keepDirty: false });
+    } else {
+      setEmployeeList(data.employees);
+    }
+  }
+
+  async function handleOffDaysFileUpload() {
+    offDayMutation.reset();
+    let data = await offDayMutation.mutateAsync(
+      (employeeOffDaysFile as FileList)[0]
+    );
+    if (offDayMutation.error) {
+      toast({
+        title: "Failed to load off days file",
+        description: <div className="text-destructive">Invalid data!</div>,
+      });
+    } else {
+      setOffDaysList(data.employeesOffDays);
+    }
   }
 
   return (
     <div>
-      <div className="w-full px-2 py-4 border rounded-md">
+      <div className="w-full px-2 py-4 border rounded-md space-y-7">
+        <div className="flex space-x-10 items-end">
+          <div className="flex flex-col space-y-2">
+            <Label>Employee List File</Label>
+            <Input
+              className="w-80"
+              value={undefined}
+              placeholder="Your name"
+              type="file"
+              onChange={(e) => {
+                if (e.currentTarget.files?.length) {
+                  mutation.reset();
+                  setEmployeeFile(e.currentTarget.files);
+                }
+              }}
+              accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+            />
+          </div>
+          <Button
+            onClick={handleEmployeeFileUpload}
+            disabled={
+              !employeeFile || mutation.isLoading || !!mutation.data?.employees
+            }
+          >
+            {mutation.isLoading ? <Loader /> : "Upload Employees"}
+          </Button>
+        </div>
+
+        <div className="flex space-x-10 items-end">
+          <div className="flex flex-col space-y-2">
+            <Label>Employee Off Days File</Label>
+            <Input
+              className="w-80"
+              value={undefined}
+              type="file"
+              onChange={(e) => {
+                if (e.currentTarget.files?.length) {
+                  offDayMutation.reset();
+                  setEmployeeOffDaysFile(e.currentTarget.files);
+                }
+              }}
+              accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+            />
+          </div>
+          <Button
+            onClick={handleOffDaysFileUpload}
+            disabled={
+              !employeeOffDaysFile ||
+              offDayMutation.isLoading ||
+              !!offDayMutation.data?.employeesOffDays
+            }
+          >
+            {offDayMutation.isLoading ? <Loader /> : "Upload Employees"}
+          </Button>
+        </div>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -136,40 +194,6 @@ export default function ReportGenerationForm() {
                   <FormControl>
                     <Input placeholder="" {...field} type="time" />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="employeeListFile"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Employee List File</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={undefined}
-                      placeholder="Your name"
-                      type="file"
-                      onChange={(e) =>
-                        e.currentTarget.files?.length &&
-                        form.setValue(
-                          field.name,
-                          {
-                            file: e.currentTarget.files[0],
-                            name: e.currentTarget.files[0].name,
-                          },
-                          {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          }
-                        )
-                      }
-                      accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-                    />
-                  </FormControl>
-                  <FormDescription>Choose .xlsx / .xls file</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -290,7 +314,7 @@ export default function ReportGenerationForm() {
             onClick={() => {
               form.handleSubmit(() => onSubmit(form.getValues()))();
             }}
-            disabled={!form.formState.isDirty}
+            disabled={!employeeList}
           >
             {form.formState.isSubmitting ? <Loader /> : "Load Configuration"}
           </Button>
@@ -299,10 +323,12 @@ export default function ReportGenerationForm() {
       {isClient &&
         form.formState.isSubmitSuccessful &&
         !form.formState.isDirty &&
-        mutation.isSuccess && (
+        employeeList &&
+        offDaysList && (
           <ReportsViewer
             configData={form.getValues()}
-            employees={mutation.data.employees}
+            employees={employeeList}
+            offDays={offDaysList}
           />
         )}
     </div>

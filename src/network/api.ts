@@ -1,5 +1,5 @@
 import { parseValidDate } from "@/lib/utils";
-import { Employee } from "@/types";
+import { Employee, OffDay } from "@/types";
 import { useMutation } from "@tanstack/react-query";
 import { performRequest } from "./requestHandler";
 
@@ -27,4 +27,29 @@ const useUploadEmployees = () => {
   });
 };
 
-export { useUploadEmployees };
+const uploadOffDaysList = async (
+  file: File
+): Promise<Record<"employeesOffDays", OffDay[]>> => {
+  return performRequest("/api/employeeOffDays", "post", file);
+};
+
+const useUploadOffDaysList = () => {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      let res = await uploadOffDaysList(file);
+
+      return {
+        employeesOffDays: res.employeesOffDays.map(
+          (employee: OffDay, i: number) => {
+            return {
+              ...employee,
+              date: parseValidDate(employee.date),
+            };
+          }
+        ),
+      };
+    },
+  });
+};
+
+export { useUploadEmployees, useUploadOffDaysList };

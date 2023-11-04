@@ -1,7 +1,6 @@
-import { ReportGenerationFormValues } from "@/app/page";
-import { gazettedHolidays } from "@/constants/dates";
+import { festivalHolidays, gazettedHolidays } from "@/constants/dates";
 import { generateRandomNumberBetweenRange } from "@/lib/utils";
-import { Employee } from "@/types";
+import { Employee, OffDay, ReportsViewerProps } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import {
   add,
@@ -65,22 +64,17 @@ const styles = StyleSheet.create({
   },
 });
 
-type AttendanceSheetProps = {
-  configData: ReportGenerationFormValues;
-  employees: Employee[];
-} & PropsWithChildren;
-
 type TableDataProps = {
   startDate: Date;
   endDate: Date;
   timeIn: string;
   timeOut: string;
+  offDays: OffDay[];
 };
 
-export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
-  configData,
-  employees,
-}) => {
+export const AttendanceSheet: React.FC<
+  ReportsViewerProps & PropsWithChildren
+> = ({ configData, employees, offDays }) => {
   let { timeIn, timeOut, name, dateRange } = configData;
   const employeeData = employees.slice(1).filter((employee: Employee) => {
     let invalidRange =
@@ -93,6 +87,7 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
     <Document title="Attendance">
       {employeeData.length > 0 ? (
         employeeData.map((employee: Employee, i: number) => {
+          let employeeOffDays = offDays.filter((e) => e.code === employee.code);
           let startDate, endDate;
           startDate = max([employee.doj, dateRange.from]);
           endDate = employee.dol
@@ -112,6 +107,7 @@ export const AttendanceSheet: React.FC<AttendanceSheetProps> = ({
               </Text>
               <EmployeeDetailBar employeeData={employee} />
               <EmployeeAttendanceTable
+                offDays={employeeOffDays}
                 startDate={startDate}
                 endDate={endDate}
                 timeIn={timeIn}
@@ -171,6 +167,7 @@ function EmployeeAttendanceTable({
   endDate,
   timeIn,
   timeOut,
+  offDays,
 }: TableDataProps) {
   let columns = [
     "Srl #",
@@ -197,12 +194,19 @@ function EmployeeAttendanceTable({
         endDate={endDate}
         timeIn={timeIn}
         timeOut={timeOut}
+        offDays={offDays}
       />
     </View>
   );
 }
 
-function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
+function EmployeeRows({
+  startDate,
+  endDate,
+  timeIn,
+  timeOut,
+  offDays,
+}: TableDataProps) {
   let data: any = [];
   let days = differenceInDays(endDate, startDate) + 1;
   let stats: any = {
@@ -218,9 +222,6 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
 
   [...Array(days)].forEach((_, i: number) => {
     let currentDate = addDays(startDate, i);
-    let isPublicHoldiay = gazettedHolidays.some((date) =>
-      isEqual(setYear(date, 1997), setYear(currentDate, 1997))
-    );
     let day = format(currentDate, "iii");
     let closingDate = format(currentDate, "dd-MMM-yyyy");
 
@@ -233,9 +234,40 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
       totalTime: "",
       overTime: "",
       attendance: "PP",
+      isOffDay: false,
     };
 
-    if (day !== "Sun" && !isPublicHoldiay) {
+    let isPublicHoldiay = gazettedHolidays.some((date) =>
+      isEqual(setYear(date, 1997), setYear(currentDate, 1997))
+    );
+    let isFestivalHoliday = festivalHolidays.some((date) =>
+      isEqual(date, currentDate)
+    );
+    let leaveDay = offDays.find((data) => isEqual(data.date, currentDate));
+
+    if (leaveDay) {
+      employeeObject.attendance = leaveDay.leaveType;
+      employeeObject.isOffDay = true;
+      stats.PP -= 1;
+    } else if (employeeObject.day === "Sun") {
+      employeeObject.attendance = "SN";
+      employeeObject.isOffDay = true;
+
+      stats.WE += 1;
+      stats.PP -= 1;
+    } else if (isPublicHoldiay) {
+      employeeObject.attendance = "GH";
+      employeeObject.isOffDay = true;
+
+      stats.GH += 1;
+      stats.PP -= 1;
+    } else if (isFestivalHoliday) {
+      employeeObject.attendance = "FH";
+      employeeObject.isOffDay = true;
+
+      // stats.GH += 1;
+      stats.PP -= 1;
+    } else {
       let startTime = sub(
         set(new Date(), {
           hours: parseInt(timeIn.split(":")[0]),
@@ -272,31 +304,13 @@ function EmployeeRows({ startDate, endDate, timeIn, timeOut }: TableDataProps) {
 
     // let row = [];
 
-    if (employeeObject.day === "Sun") {
-      employeeObject.attendance = "SN";
-      stats.WE += 1;
-      stats.PP -= 1;
-    }
-
-    if (isPublicHoldiay) {
-      employeeObject.attendance = "GH";
-      stats.GH += 1;
-      stats.PP -= 1;
-    }
-
-    if (employeeObject.attendance === "AB") {
-      stats.PP -= 1;
-      stats["Earn days"] -= 1;
-    }
-
     data.push(employeeObject);
   });
 
   let rows = data?.map((item: any, i: number) => {
     let rowStyle: any[] = [styles.rowView];
     let dayCellStyle: any[] = [styles.colItem];
-    let isOffOrHoliday = item.day === "Sun" || item.attendance === "GH";
-    if (isOffOrHoliday) {
+    if (item.isOffDay) {
       rowStyle = rowStyle.concat(styles.sunday);
       dayCellStyle = dayCellStyle.concat(styles.danger);
     }

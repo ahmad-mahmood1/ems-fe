@@ -1,5 +1,4 @@
-import { ReportGenerationFormValues } from "@/app/page";
-import { Employee } from "@/types";
+import { Employee, OffDay, ReportsViewerProps } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { format, isBefore, set } from "date-fns";
 import { PropsWithChildren } from "react";
@@ -40,7 +39,11 @@ const styles = StyleSheet.create({
   },
 });
 
-const groupDataByDepartment = (employeeList: Employee[], date: Date) => {
+const groupDataByDepartment = (
+  employeeList: Employee[],
+  date: Date,
+  offDays: OffDay[]
+) => {
   let departmentEmployeeHash: Record<string, any[]> = {};
   let eobi = 250;
 
@@ -56,7 +59,7 @@ const groupDataByDepartment = (employeeList: Employee[], date: Date) => {
         code: employee.code,
         doj: employee.doj,
         grossSalary,
-        days: 26,
+        days: 26 - offDays.filter((e) => e.code === employee.code).length,
         tax: "-",
         eobi,
         ot: "-",
@@ -78,18 +81,18 @@ const groupDataByDepartment = (employeeList: Employee[], date: Date) => {
   return departmentEmployeeHash;
 };
 
-type SalarySheetProps = {
-  configData: ReportGenerationFormValues;
-  employees: Employee[];
-} & PropsWithChildren;
-
-export function SalarySheet({ configData, employees }: SalarySheetProps) {
+export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
+  configData,
+  employees,
+  offDays,
+}: ReportsViewerProps & PropsWithChildren) => {
   let { name, month } = configData;
 
   const date = set(new Date(), { month: parseInt(month) });
   const employeeDepartmentHash = groupDataByDepartment(
     employees.slice(1),
-    date
+    date,
+    offDays
   );
   const formattedMonth = format(date, "MMM - yy");
 
@@ -116,7 +119,7 @@ export function SalarySheet({ configData, employees }: SalarySheetProps) {
       </Page>
     </Document>
   );
-}
+};
 
 function SalariesByDepartmentTable({
   employees,
