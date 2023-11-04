@@ -243,7 +243,10 @@ function EmployeeRows({
     let isFestivalHoliday = festivalHolidays.some((date) =>
       isEqual(date, currentDate)
     );
-    let leaveDay = offDays.find((data) => isEqual(data.date, currentDate));
+    let leaveDay = offDays.find(
+      (data) =>
+        format(data.date, "dd-MMM-yyyy") === format(currentDate, "dd-MMM-yyyy")
+    );
 
     if (leaveDay) {
       employeeObject.attendance = leaveDay.leaveType;
