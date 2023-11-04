@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
 
   danger: {
-    color: "red",
+    color: "#db4646",
   },
 });
 
@@ -252,10 +252,10 @@ function EmployeeRows({
       employeeObject.attendance = leaveDay.leaveType;
       employeeObject.isOffDay = true;
       stats.PP -= 1;
+      stats.AB += 1;
     } else if (employeeObject.day === "Sun") {
       employeeObject.attendance = "SN";
       employeeObject.isOffDay = true;
-
       stats.WE += 1;
       stats.PP -= 1;
     } else if (isPublicHoldiay) {
