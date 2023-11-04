@@ -28,6 +28,23 @@ const styles = StyleSheet.create({
     borderTop: "1px solid #EEE",
     borderLeft: "1px solid #EEE",
     borderRight: "1px solid #EEE",
+    backgroundColor: "#0362fc",
+  },
+  statsRow: {
+    // margin: "auto",
+    flexDirection: "row",
+    borderTop: "1px solid #EEE",
+    borderLeft: "1px solid #EEE",
+    borderRight: "1px solid #EEE",
+    backgroundColor: "#038cfc",
+  },
+  dataRow: {
+    // margin: "auto",
+    flexDirection: "row",
+    borderTop: "1px solid #EEE",
+    borderLeft: "1px solid #EEE",
+    borderRight: "1px solid #EEE",
+    height: "50px",
   },
 
   tableCol: {
@@ -155,7 +172,7 @@ function SalariesByDepartmentTable({
   };
 
   return (
-    <View wrap={false}>
+    <View>
       <View
         style={[
           tw("border-2 border-zinc-300 font-timesBold"),
@@ -214,7 +231,7 @@ function EmployeeRows({
     stats.netPay += netPay;
 
     return (
-      <View style={styles.tableRow} key={i}>
+      <View style={styles.dataRow} key={i}>
         <TableCol customStyle={{ width: "30px" }} str={(i + 1).toString()} />
         <TableCol str={employee.code} customStyle={{ width: "30px" }} />
         <TableCol str={employee.name} customStyle={{ width: "120px" }} />
@@ -262,12 +279,12 @@ function TableCol({
 function StatsRow({ data }: { data: any }) {
   return (
     <View
-      style={[styles.tableRow, tw("border border-zinc-300 font-timesBold")]}
+      style={[styles.statsRow, tw("border border-zinc-300 font-timesBold")]}
     >
       <TableCol />
       <TableCol />
       <TableCol />
-      <TableCol str={"Departments Total:"} />
+      <TableCol str={"Total:"} />
       <TableCol />
       <TableCol str={data.grossSalary} />
       <TableCol />

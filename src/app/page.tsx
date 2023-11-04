@@ -323,12 +323,11 @@ export default function ReportGenerationForm() {
       {isClient &&
         form.formState.isSubmitSuccessful &&
         !form.formState.isDirty &&
-        employeeList &&
-        offDaysList && (
+        employeeList && (
           <ReportsViewer
             configData={form.getValues()}
             employees={employeeList}
-            offDays={offDaysList}
+            offDays={offDaysList || []}
           />
         )}
     </div>
