@@ -216,7 +216,7 @@ function EmployeeRows({
     stats.netPay += netPay;
 
     return (
-      <View style={[styles.tableRow]} key={i}>
+      <View style={[styles.tableRow, {height:"40px"}]} key={i}>
         <TableCol customStyle={{ width: "30px" }} str={(i + 1).toString()} />
         <TableCol str={employee.code} customStyle={{ width: "30px" }} />
         <TableCol str={employee.name} customStyle={{ width: "120px" }} />
