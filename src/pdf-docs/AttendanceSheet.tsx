@@ -7,6 +7,7 @@ import {
   addDays,
   differenceInDays,
   format,
+  getTime,
   intervalToDuration,
   isAfter,
   isBefore,
@@ -278,7 +279,7 @@ function EmployeeRows({
         }),
         { minutes: generateRandomNumberBetweenRange(0, 8) }
       );
-      let endTime = add(
+      let endTime: any = add(
         set(new Date(), {
           hours: parseInt(timeOut.split(":")[0]),
           minutes: parseInt(timeOut.split(":")[1]),
@@ -303,6 +304,15 @@ function EmployeeRows({
             : totalTime.minutes
           : "00"
       }`;
+
+      let outTimeDate = set(new Date(), {
+        hours: parseInt(timeOut.split(":")[0]),
+        minutes: parseInt(timeOut.split(":")[1]),
+      });
+
+      if (Date.now() < getTime(outTimeDate)) {
+        employeeObject.timeOut = "";
+      }
     }
 
     // let row = [];

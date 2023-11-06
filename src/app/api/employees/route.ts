@@ -17,7 +17,6 @@ export async function POST(req: Request) {
     "doj",
     "dol",
     "department",
-    "joining_salary",
     "latest_salary",
   ];
   const worksheetToJson: Employee[] = utils.sheet_to_json(ws, {

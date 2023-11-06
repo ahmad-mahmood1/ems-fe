@@ -1,8 +1,9 @@
 import { Employee, OffDay, ReportsViewerProps } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { format, isBefore, set } from "date-fns";
+import { format, formatDistance, isBefore, set } from "date-fns";
 import { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
+import { formatNumber } from "../lib/utils";
 
 const tw = createTw({
   theme: {
@@ -50,9 +51,7 @@ const groupDataByDepartment = (
   employeeList
     ?.filter((employee) => isBefore(employee.doj, date))
     .forEach((employee: Employee, i: number) => {
-      let grossSalary = parseInt(
-        employee.latest_salary || employee.joining_salary
-      );
+      let grossSalary = parseInt(employee.latest_salary);
       let data = {
         name: employee.name,
         designation: employee.designation,
@@ -60,13 +59,13 @@ const groupDataByDepartment = (
         doj: employee.doj,
         grossSalary,
         days: 26 - offDays.filter((e) => e.code === employee.code).length,
-        tax: "-",
+        tax: 0,
         eobi,
-        ot: "-",
-        otAmount: "-",
-        loan: "-",
-        otherDed: "-",
-        advanceAmount: "-",
+        ot: 0,
+        otAmount: 0,
+        loan: 0,
+        otherDed: 0,
+        advanceAmount: 0,
         netPay: grossSalary - eobi,
       };
       if (employee.department) {
@@ -216,12 +215,19 @@ function EmployeeRows({
     stats.netPay += netPay;
 
     return (
-      <View style={[styles.tableRow, {height:"40px"}]} key={i}>
+      <View style={[styles.tableRow, { height: "40px" }]} key={i}>
         <TableCol customStyle={{ width: "30px" }} str={(i + 1).toString()} />
-        <TableCol str={employee.code} customStyle={{ width: "30px" }} />
+        <TableCol
+          str={employee.code}
+          customStyle={{ width: "30px" }}
+          disableNumberFormat={true}
+        />
         <TableCol str={employee.name} customStyle={{ width: "120px" }} />
         <TableCol str={employee.designation} customStyle={{ width: "100px" }} />
-        <TableCol str={format(employee.doj, "dd-MMM-yyyy")} />
+        <TableCol
+          str={format(employee.doj, "dd-MMM-yyyy")}
+          disableNumberFormat={true}
+        />
         <TableCol str={employee.grossSalary} />
         <TableCol str={employee.days} />
         <TableCol str={employee.ot} />
@@ -248,14 +254,26 @@ function EmployeeRows({
 function TableCol({
   str = "",
   customStyle = {},
+  disableNumberFormat = false,
 }: {
   str?: string;
   customStyle?: any;
+  disableNumberFormat?: boolean;
 }) {
+  let isNotNum = isNaN(parseInt(str));
+
+  let textToShow = str
+    ? isNotNum
+      ? str
+      : disableNumberFormat
+      ? str
+      : formatNumber(parseInt(str))
+    : "-";
+
   return (
     <View style={[styles.tableCol, customStyle]}>
       <View style={styles.tableCell}>
-        <Text>{str}</Text>
+        <Text>{textToShow}</Text>
       </View>
     </View>
   );
@@ -280,10 +298,10 @@ function StatsRow({ data }: { data: any }) {
       <TableCol />
       <TableCol str={data.otAmount} />
       <TableCol str={data.eobi} />
-      <TableCol str={data.tax ? data.tax : "-"} />
-      <TableCol str={data.loan ? data.loan : "-"} />
-      <TableCol str={data.otherDed ? data.loan : "-"} />
-      <TableCol str={data.advancedPayment ? data.advancedPayment : "-"} />
+      <TableCol str={data.tax} />
+      <TableCol str={data.loan} />
+      <TableCol str={data.otherDed} />
+      <TableCol str={data.advancedPayment} />
       <TableCol str={data.netPay} />
       <TableCol />
     </View>
