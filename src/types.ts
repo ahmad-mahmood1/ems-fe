@@ -45,7 +45,6 @@ export interface Employee {
   doj: Date;
   dol?: Date;
   department: string;
-  joining_salary: string;
   latest_salary: string;
 }
 

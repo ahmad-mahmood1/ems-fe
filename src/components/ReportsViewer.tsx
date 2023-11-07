@@ -40,8 +40,6 @@ function renderDocument(
 function ReportsViewer({ configData, employees, offDays }: ReportsViewerProps) {
   let { reportType } = configData;
 
-  const [preview, setPreview] = useState(false);
-
   const [{ loading, url, error }, update] = usePDF({
     document: undefined,
   });
