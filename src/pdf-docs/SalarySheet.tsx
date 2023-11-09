@@ -1,6 +1,6 @@
 import { Employee, OffDay, ReportsViewerProps } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { format, formatDistance, isBefore, set } from "date-fns";
+import { format, isBefore, set } from "date-fns";
 import { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
 import { formatNumber } from "../lib/utils";
@@ -17,6 +17,13 @@ const tw = createTw({
     extend: {},
   },
 });
+
+let widthHash: any = {
+  0: "30px",
+  1: "50px",
+  2: "120px",
+  3: "150px",
+};
 
 const COLN_WIDTH = 100 / 16;
 const styles = StyleSheet.create({
@@ -44,14 +51,33 @@ const groupDataByDepartment = (
   employeeList: Employee[],
   date: Date,
   offDays: OffDay[]
-) => {
+): [Record<string, any>, Record<string, number>] => {
   let departmentEmployeeHash: Record<string, any[]> = {};
   let eobi = 250;
+  let allDepartmentsTotal: Record<string, number> = {
+    grossSalary: 0,
+    tax: 0,
+    eobi: 0,
+    otAmount: 0,
+    loan: 0,
+    otherDed: 0,
+    advancedAmount: 0,
+    netPay: 0,
+  };
 
   employeeList
     ?.filter((employee) => isBefore(employee.doj, date))
     .forEach((employee: Employee, i: number) => {
-      let grossSalary = parseInt(employee.latest_salary);
+      let grossSalary = parseInt("20000");
+      let tax = 0;
+      let employeeEobi = eobi;
+      let ot = 0;
+      let otAmount = 0;
+      let loan = 0;
+      let otherDed = 0;
+      let advanceAmount = 0;
+      let netPay = grossSalary - eobi;
+
       let data = {
         name: employee.name,
         designation: employee.designation,
@@ -59,25 +85,34 @@ const groupDataByDepartment = (
         doj: employee.doj,
         grossSalary,
         days: 26 - offDays.filter((e) => e.code === employee.code).length,
-        tax: 0,
-        eobi,
-        ot: 0,
-        otAmount: 0,
-        loan: 0,
-        otherDed: 0,
-        advanceAmount: 0,
-        netPay: grossSalary - eobi,
+        tax,
+        eobi: employeeEobi,
+        ot,
+        otAmount,
+        loan,
+        otherDed,
+        advanceAmount,
+        netPay,
       };
-      if (employee.department) {
-        if (!departmentEmployeeHash[employee.department]) {
-          departmentEmployeeHash[employee.department] = [data];
+
+      let employeeDepartment = employee.department.trim();
+      if (employeeDepartment) {
+        if (!departmentEmployeeHash[employeeDepartment]) {
+          departmentEmployeeHash[employeeDepartment] = [data];
         } else {
-          departmentEmployeeHash[employee.department].push(data);
+          departmentEmployeeHash[employeeDepartment].push(data);
         }
+        allDepartmentsTotal.grossSalary =
+          allDepartmentsTotal.grossSalary + grossSalary;
+        allDepartmentsTotal.tax = allDepartmentsTotal.tax + tax;
+        allDepartmentsTotal.eobi = allDepartmentsTotal.eobi + eobi;
+        allDepartmentsTotal.ot = allDepartmentsTotal.ot + ot;
+        allDepartmentsTotal.otAmount = allDepartmentsTotal.otAmount + otAmount;
+        allDepartmentsTotal.loan = allDepartmentsTotal.loan + loan;
       }
     });
 
-  return departmentEmployeeHash;
+  return [departmentEmployeeHash, allDepartmentsTotal];
 };
 
 export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
@@ -88,7 +123,7 @@ export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
   let { name, month } = configData;
 
   const date = set(new Date(), { month: parseInt(month) });
-  const employeeDepartmentHash = groupDataByDepartment(
+  const [employeeDepartmentHash, allDepartmentsTotal] = groupDataByDepartment(
     employees.slice(1),
     date,
     offDays
@@ -115,6 +150,10 @@ export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
               department={departmentKey}
             />
           ))}
+        <StatsRow
+          data={allDepartmentsTotal}
+          isTotal={true}
+        />
       </Page>
     </Document>
   );
@@ -145,13 +184,6 @@ function SalariesByDepartmentTable({
     "Net Pay",
     "Receipent Signature",
   ];
-
-  let widthHash: any = {
-    0: "30px",
-    1: "30px",
-    2: "120px",
-    3: "100px",
-  };
 
   return (
     <View>
@@ -215,15 +247,27 @@ function EmployeeRows({
     stats.netPay += netPay;
 
     return (
-      <View style={[styles.tableRow, { height: "40px" }]} key={i}>
-        <TableCol customStyle={{ width: "30px" }} str={(i + 1).toString()} />
+      <View
+        style={[styles.tableRow, { height: "40px" }]}
+        key={i}
+      >
+        <TableCol
+          customStyle={{ width: widthHash[0] }}
+          str={(i + 1).toString()}
+        />
         <TableCol
           str={employee.code}
-          customStyle={{ width: "30px" }}
+          customStyle={{ width: widthHash[1] }}
           disableNumberFormat={true}
         />
-        <TableCol str={employee.name} customStyle={{ width: "120px" }} />
-        <TableCol str={employee.designation} customStyle={{ width: "100px" }} />
+        <TableCol
+          str={employee.name}
+          customStyle={{ width: widthHash[2] }}
+        />
+        <TableCol
+          str={employee.designation}
+          customStyle={{ width: widthHash[3] }}
+        />
         <TableCol
           str={format(employee.doj, "dd-MMM-yyyy")}
           disableNumberFormat={true}
@@ -252,46 +296,48 @@ function EmployeeRows({
 }
 
 function TableCol({
-  str = "",
+  str,
   customStyle = {},
   disableNumberFormat = false,
 }: {
-  str?: string;
+  str?: string | number;
   customStyle?: any;
   disableNumberFormat?: boolean;
 }) {
-  let isNotNum = isNaN(parseInt(str));
-
-  let textToShow = str
-    ? isNotNum
-      ? str
-      : disableNumberFormat
-      ? str
-      : formatNumber(parseInt(str))
-    : "-";
+  let newString;
+  if (typeof str === "number") {
+    let textToNumber = (str: number) =>
+      disableNumberFormat ? str : formatNumber(str);
+    newString = textToNumber(str);
+  } else {
+    newString = str ? str : "";
+  }
 
   return (
     <View style={[styles.tableCol, customStyle]}>
       <View style={styles.tableCell}>
-        <Text>{textToShow}</Text>
+        <Text>{newString}</Text>
       </View>
     </View>
   );
 }
 
-function StatsRow({ data }: { data: any }) {
+function StatsRow({ data, isTotal = false }: { data: any; isTotal?: boolean }) {
   return (
     <View
       style={[
         styles.tableRow,
-        { backgroundColor: "#c3d5f5" },
+        { backgroundColor: isTotal ? "#fffa" : "#c3d5f5" },
         tw("border border-zinc-300 font-timesBold"),
       ]}
     >
       <TableCol />
       <TableCol />
       <TableCol />
-      <TableCol str={"Total:"} />
+      <TableCol
+        str={isTotal ? "All Deaprtment Total:" : "Deaprtment Total:"}
+        customStyle={{ width: "150px" }}
+      />
       <TableCol />
       <TableCol str={data.grossSalary} />
       <TableCol />

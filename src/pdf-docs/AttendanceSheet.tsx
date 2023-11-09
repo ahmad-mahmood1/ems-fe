@@ -185,7 +185,10 @@ function EmployeeAttendanceTable({
     <View style={tw("mt-2")}>
       <View style={styles.rowView}>
         {columns?.map((c: string) => (
-          <Text key={c} style={[styles.colItem, tw("font-timesBold")]}>
+          <Text
+            key={c}
+            style={[styles.colItem, tw("font-timesBold")]}
+          >
             {c}
           </Text>
         ))}
@@ -328,7 +331,10 @@ function EmployeeRows({
       dayCellStyle = dayCellStyle.concat(styles.danger);
     }
     return (
-      <View style={rowStyle} key={item.srl}>
+      <View
+        style={rowStyle}
+        key={item.srl}
+      >
         <Text style={styles.colItem}>{item.srl}</Text>
         <Text style={dayCellStyle}>{item.day}</Text>
         <Text style={styles.colItem}>{item.closingDate}</Text>
