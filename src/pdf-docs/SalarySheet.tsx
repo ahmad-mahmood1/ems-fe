@@ -68,7 +68,7 @@ const groupDataByDepartment = (
   employeeList
     ?.filter((employee) => isBefore(employee.doj, date))
     .forEach((employee: Employee, i: number) => {
-      let grossSalary = parseInt("20000");
+      let grossSalary = parseInt(employee.latest_salary || "0");
       let tax = 0;
       let employeeEobi = eobi;
       let ot = 0;
@@ -109,6 +109,7 @@ const groupDataByDepartment = (
         allDepartmentsTotal.ot = allDepartmentsTotal.ot + ot;
         allDepartmentsTotal.otAmount = allDepartmentsTotal.otAmount + otAmount;
         allDepartmentsTotal.loan = allDepartmentsTotal.loan + loan;
+        allDepartmentsTotal.netPay = allDepartmentsTotal.netPay + netPay;
       }
     });
 
