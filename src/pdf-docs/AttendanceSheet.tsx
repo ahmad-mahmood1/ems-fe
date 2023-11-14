@@ -272,7 +272,7 @@ function EmployeeRows({
       employeeObject.attendance = "FH";
       employeeObject.isOffDay = true;
 
-      // stats.GH += 1;
+      stats.GH += 1;
       stats.PP -= 1;
     } else {
       let startTime = sub(
