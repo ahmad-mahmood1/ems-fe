@@ -1,6 +1,6 @@
 import { Employee, OffDay, ReportsViewerProps } from "@/types";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { format, isBefore, set } from "date-fns";
+import { format, getMonth, isBefore, set } from "date-fns";
 import { PropsWithChildren } from "react";
 import { createTw } from "react-pdf-tailwind";
 import { formatNumber } from "../lib/utils";
@@ -127,7 +127,7 @@ export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
   const [employeeDepartmentHash, allDepartmentsTotal] = groupDataByDepartment(
     employees.slice(1),
     date,
-    offDays
+    offDays.filter((offDay) => getMonth(offDay.date) === getMonth(date))
   );
   const formattedMonth = format(date, "MMM - yy");
 
