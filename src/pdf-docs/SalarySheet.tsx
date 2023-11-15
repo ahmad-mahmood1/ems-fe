@@ -53,7 +53,7 @@ const groupDataByDepartment = (
   offDays: OffDay[]
 ): [Record<string, any>, Record<string, number>] => {
   let departmentEmployeeHash: Record<string, any[]> = {};
-  let eobi = 250;
+  let eobi = 320;
   let allDepartmentsTotal: Record<string, number> = {
     grossSalary: 0,
     tax: 0,

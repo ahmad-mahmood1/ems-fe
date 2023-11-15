@@ -14,7 +14,6 @@ import {
 } from "@/types";
 import { usePDF } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
-import { useState } from "react";
 import Loader from "./ui/loader";
 
 const componentHash: Record<
@@ -33,7 +32,11 @@ function renderDocument(
   let Comp = componentHash[configData.reportType];
 
   return (
-    <Comp configData={configData} employees={employees} offDays={offDays} />
+    <Comp
+      configData={configData}
+      employees={employees}
+      offDays={offDays}
+    />
   );
 }
 
@@ -68,7 +71,10 @@ function ReportsViewer({ configData, employees, offDays }: ReportsViewerProps) {
               <Loader />
             </div>
           ) : (
-            <a href={url || ""} download={`${reportName}.pdf`}>
+            <a
+              href={url || ""}
+              download={`${reportName}.pdf`}
+            >
               <Icons.download />
             </a>
           )}
