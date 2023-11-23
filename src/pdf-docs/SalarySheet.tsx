@@ -76,15 +76,21 @@ const groupDataByDepartment = (
       let loan = 0;
       let otherDed = 0;
       let advanceAmount = 0;
-      let netPay = grossSalary - eobi;
-
+      let totalWorkingDays = 26;
+      let employeeOffDays = offDays.filter(
+        (e) => e.code === employee.code
+      ).length;
+      let perDayRate = Math.round(grossSalary / totalWorkingDays);
+      let netPay = grossSalary - eobi - employeeOffDays * perDayRate;
       let data = {
         name: employee.name,
         designation: employee.designation,
         code: employee.code,
         doj: employee.doj,
         grossSalary,
-        days: 26 - offDays.filter((e) => e.code === employee.code).length,
+        days:
+          totalWorkingDays -
+          offDays.filter((e) => e.code === employee.code).length,
         tax,
         eobi: employeeEobi,
         ot,
@@ -127,7 +133,10 @@ export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
   const [employeeDepartmentHash, allDepartmentsTotal] = groupDataByDepartment(
     employees.slice(1),
     date,
-    offDays.filter((offDay) => getMonth(offDay.date) === getMonth(date))
+    offDays.filter(
+      (offDay) =>
+        getMonth(offDay.date) === getMonth(date) && offDay.leaveType === "AB"
+    )
   );
   const formattedMonth = format(date, "MMM - yy");
 

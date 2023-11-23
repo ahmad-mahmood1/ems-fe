@@ -256,7 +256,11 @@ function EmployeeRows({
       employeeObject.attendance = leaveDay.leaveType;
       employeeObject.isOffDay = true;
       stats.PP -= 1;
-      stats.AB += 1;
+      if (leaveDay.leaveType === "AB") {
+        stats.AB += 1;
+      } else {
+        stats.LW += 1;
+      }
     } else if (employeeObject.day === "Sun") {
       employeeObject.attendance = "SN";
       employeeObject.isOffDay = true;

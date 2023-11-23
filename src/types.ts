@@ -28,7 +28,7 @@ export type ReportGenerationFormValues = z.infer<typeof configSchema>;
 
 export type ReportTypes = "attendance" | "salary";
 
-export type LeaveType = "SL" | "CL";
+export type LeaveType = "SL" | "CL" | "AB";
 
 export interface Employee {
   serial_number: string;
