@@ -50,10 +50,11 @@ const styles = StyleSheet.create({
 const groupDataByDepartment = (
   employeeList: Employee[],
   date: Date,
-  offDays: OffDay[]
+  offDays: OffDay[],
+  configEobi: string
 ): [Record<string, any>, Record<string, number>] => {
   let departmentEmployeeHash: Record<string, any[]> = {};
-  let eobi = 250;
+  let eobi = parseInt(configEobi);
   let allDepartmentsTotal: Record<string, number> = {
     grossSalary: 0,
     tax: 0,
@@ -136,7 +137,8 @@ export const SalarySheet: React.FC<ReportsViewerProps & PropsWithChildren> = ({
     offDays.filter(
       (offDay) =>
         getMonth(offDay.date) === getMonth(date) && offDay.leaveType === "AB"
-    )
+    ),
+    configData.eobi
   );
   const formattedMonth = format(date, "MMM - yy");
 

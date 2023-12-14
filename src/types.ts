@@ -4,6 +4,10 @@ export const configSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }).min(2, {
     message: "Name must be at least 2 characters.",
   }),
+  eobi: z
+    .string({ required_error: "EOBI Required" })
+    .min(1, { message: "Invalid EOBI" })
+    .max(5, { message: "EOBI Limit Exceeded" }),
   timeIn: z
     .string({ required_error: "Time required" })
     .refine(

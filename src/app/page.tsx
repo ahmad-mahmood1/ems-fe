@@ -9,13 +9,13 @@ import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Loader from "@/components/ui/loader";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -28,15 +28,14 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import useIsClient from "@/hooks/useIsClient";
 import { useUploadEmployees, useUploadOffDaysList } from "@/network/api";
-import { getMonth, subDays } from "date-fns";
-import { useState } from "react";
-import { Label } from "@/components/ui/label";
 import {
   Employee,
   OffDay,
   ReportGenerationFormValues,
   configSchema,
 } from "@/types";
+import { getMonth, subDays } from "date-fns";
+import { useState } from "react";
 
 export default function ReportGenerationForm() {
   const [employeeFile, setEmployeeFile] = useState<FileList | null>(null);
@@ -166,7 +165,10 @@ export default function ReportGenerationForm() {
                 <FormItem>
                   <FormLabel>Company name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your name" {...field} />
+                    <Input
+                      placeholder="Your name"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,7 +181,11 @@ export default function ReportGenerationForm() {
                 <FormItem>
                   <FormLabel>Time In</FormLabel>
                   <FormControl>
-                    <Input placeholder="" {...field} type="time" />
+                    <Input
+                      placeholder=""
+                      {...field}
+                      type="time"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,7 +198,11 @@ export default function ReportGenerationForm() {
                 <FormItem>
                   <FormLabel>Time Out</FormLabel>
                   <FormControl>
-                    <Input placeholder="" {...field} type="time" />
+                    <Input
+                      placeholder=""
+                      {...field}
+                      type="time"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -228,7 +238,23 @@ export default function ReportGenerationForm() {
                 </FormItem>
               )}
             />
-
+            <FormField
+              control={form.control}
+              name="eobi"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>EOBI</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Your name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="month"
