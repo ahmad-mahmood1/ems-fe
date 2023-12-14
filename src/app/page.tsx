@@ -238,6 +238,7 @@ export default function ReportGenerationForm() {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="eobi"
@@ -247,7 +248,7 @@ export default function ReportGenerationForm() {
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Your name"
+                      placeholder="Enter Eobi"
                       {...field}
                     />
                   </FormControl>
@@ -255,6 +256,7 @@ export default function ReportGenerationForm() {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="month"
