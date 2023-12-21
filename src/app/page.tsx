@@ -57,6 +57,7 @@ export default function ReportGenerationForm() {
       from: subDays(new Date(), 20),
     },
     month: getMonth(new Date()).toString(),
+    eobi: "250",
   };
 
   const form = useForm<ReportGenerationFormValues>({

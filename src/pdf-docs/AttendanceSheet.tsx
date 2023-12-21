@@ -293,7 +293,6 @@ function EmployeeRows({
         }),
         { minutes: generateRandomNumberBetweenRange(2, 5) }
       );
-
       let totalTime = intervalToDuration({ start: startTime, end: endTime });
 
       employeeObject.timeIn = format(startTime, "HH:mm");
@@ -312,11 +311,12 @@ function EmployeeRows({
           : "00"
       }`;
 
-      let outTimeDate = set(new Date(), {
+      let outTimeDate = set(currentDate, {
         hours: parseInt(timeOut.split(":")[0]),
         minutes: parseInt(timeOut.split(":")[1]),
       });
 
+      // check if attendance date is the after the current date and time
       if (Date.now() < getTime(outTimeDate)) {
         employeeObject.timeOut = "";
       }
